@@ -32,6 +32,7 @@ public class BloomFilterTest {
 		assertEquals(testFilter.numBits, 128);
 		assertEquals(testFilter.bits.size(), testFilter.numBits);
 		assertEquals(testFilter.numHashes, 3);
+		//Error rate formula for a bloom filter is: (1-e^(kn/m))^k
 		double expected = Math.pow((Math.exp(15./ 64.) - 1.), 3.) / Math.exp(45. / 64.);
 		assertEquals(expected, testFilter.errorRate, 10E-4);
 	}
@@ -121,9 +122,10 @@ public class BloomFilterTest {
 		
 		/*
 		 * Now I'll generate strings starting with a "B" and
-		 * with length of 4 and 6, so they shouldn't
-		 * be in the hash. We can have false positives, but their number should
-		 * conform with the false positive rate.
+		 * with a length of 4 or 6, so they shouldn't
+		 * be in the filter. We can have false positives, 
+		 * but the error rate should conform with 
+		 * the calculated false positive rate.
 		 */
 		int numFalseElements = 100000;
 		int falsePositives = 0;
@@ -148,7 +150,7 @@ public class BloomFilterTest {
 	}
 	
 	/*
-	 * Helper method to generate strings
+	 * Helper method to generate upper-case strings
 	 */
 	public String generateString(int size, String startsWith, Random random) {
 		
