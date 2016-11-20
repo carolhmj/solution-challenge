@@ -10,88 +10,43 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Random;
 
-import hash.DoubleHash;
-import hash.HashFunction;
-import hash.MD2Hash;
-import hash.SimpleHash;
+import hash.BloomHashFunction;
+import hash.Murmur32;
+import hash.SipHash24;
 
 public class BloomFilterTest {
 
+	
 	@Test
 	public void testBloomFilter() {
-		Vector<HashFunction> hv = new Vector<>();
+		Vector<BloomHashFunction> hv = new Vector<>();
 
-		SimpleHash simple = new SimpleHash();
-		/*
-		 * I'm doing the double hash wrongly, since the functions aren't
-		 * independent, but that's just for creation
-		 */
-
-		hv.add(simple);
-		hv.add(new DoubleHash(10, 20, simple, simple));
-		hv.add(new DoubleHash(10, 20, simple, simple));
-		hv.add(new DoubleHash(10, 20, simple, simple));
-		hv.add(new DoubleHash(10, 20, simple, simple));
-		hv.add(new DoubleHash(10, 20, simple, simple));
-		hv.add(new DoubleHash(10, 20, simple, simple));
-		hv.add(new DoubleHash(10, 20, simple, simple));
-		hv.add(new DoubleHash(10, 20, simple, simple));
-
+		Murmur32 murmur32 = new Murmur32(100);
+		SipHash24 sip24 = new SipHash24(29, 47);
+		
+		hv.add(murmur32);
+		hv.add(sip24);
+		
 		BloomFilter testFilter = new BloomFilter(10, 128, hv);
 		assertEquals(testFilter.expectedElements, 10);
 		assertEquals(testFilter.numBits, 128);
 		assertEquals(testFilter.bits.size(), testFilter.numBits);
-		assertEquals(testFilter.numHashes, 9);
-		double expected = Math.pow((Math.exp(45./ 64.) - 1.), 9.) / Math.exp(405. / 64.);
+		assertEquals(testFilter.numHashes, 3);
+		double expected = Math.pow((Math.exp(15./ 64.) - 1.), 3.) / Math.exp(45. / 64.);
 		assertEquals(expected, testFilter.errorRate, 10E-4);
 	}
 
-	@Test
-	public void testAdd() {
-		Vector<HashFunction> hv = new Vector<>();
-
-		SimpleHash simple = new SimpleHash();
-		MD2Hash md2 = new MD2Hash();
-
-		//9 double hashes will be generated
-		hv.add(new DoubleHash(31, 7, simple, md2));
-		hv.add(new DoubleHash(11, 37, simple, md2));
-		hv.add(new DoubleHash(5, 23, simple, md2));
-		hv.add(new DoubleHash(79, 2, simple, md2));
-		hv.add(new DoubleHash(3, 83, simple, md2));
-		hv.add(new DoubleHash(29, 17, simple, md2));
-		hv.add(new DoubleHash(41, 43, simple, md2));
-		hv.add(new DoubleHash(3, 61, simple, md2));
-
-		BloomFilter testFilter = new BloomFilter(10, 128, hv);
-		
-		//Elements to be added
-		List<String> elements = Arrays.asList("google.com", "facebook.com", "reddit.com", 
-											  "deezer.com", "wikipedia.org", "deezer.com",
-											  "amazon.com", "gutenberg.org", "twitter.com",
-											  "ufc.br");
-		for (String el : elements) {
-//			System.out.println("Inserting... " + el);
-			testFilter.add(el);
-		}
-	}
 
 	@Test
 	public void testExists() {
-		Vector<HashFunction> hv = new Vector<>();
+		Vector<BloomHashFunction> hv = new Vector<>();
 
-		SimpleHash simple = new SimpleHash();
-		MD2Hash md2 = new MD2Hash();
+		Random random = new Random(System.currentTimeMillis());
+		Murmur32 murmur32 = new Murmur32(random.nextInt());
+		SipHash24 sip24 = new SipHash24(random.nextLong(), random.nextLong());
 
-		//9 double hashes will be generated
-		hv.add(new DoubleHash(31, 7, simple, md2));
-		hv.add(new DoubleHash(11, 37, simple, md2));
-		hv.add(new DoubleHash(5, 23, simple, md2));
-		hv.add(new DoubleHash(79, 2, simple, md2));
-		hv.add(new DoubleHash(3, 83, simple, md2));
-		hv.add(new DoubleHash(29, 17, simple, md2));
-		hv.add(new DoubleHash(41, 43, simple, md2));
-		hv.add(new DoubleHash(3, 61, simple, md2));
+		hv.add(murmur32);
+		hv.add(sip24);
 
 		BloomFilter testFilter = new BloomFilter(10, 128, hv);
 		
@@ -101,7 +56,6 @@ public class BloomFilterTest {
 											  "amazon.com", "gutenberg.org", "twitter.com",
 											  "ufc.br");
 		for (String el : elements) {
-//			System.out.println("Inserting... " + el);
 			testFilter.add(el);
 			assertTrue(testFilter.exists(el));
 		}
@@ -117,7 +71,6 @@ public class BloomFilterTest {
 				 									  "giogle.com", "google.comn",
 				 									  "foogle.com");
 		for (String elnot : elementsNotExist) {
-//			System.out.println("Testing... " + elnot);
 			assertFalse(testFilter.exists(elnot));
 		}
 	
@@ -126,66 +79,72 @@ public class BloomFilterTest {
 	@Test
 	public void testLargeScale() {
 		/*
-		 * We will test a large number of elements in this test. 
+		 * We will test a large number of elements. 
 		 * The number of elements is 10^6, the number of bits
-		 * is 2^23, the number of hashes is 6 and the expected 
-		 * error rate is approximately 1.8%
+		 * is 2^23, the number of hashes is 3 and the expected 
+		 * error rate is approximately 2.7%
 		 */
-		int numElements = 1000;
+		int numElements = 1000000;
 		int numBits = 8388608;
 		
-		Vector<HashFunction> hv = new Vector<>();
+		Vector<BloomHashFunction> hv = new Vector<>();
 
-		SimpleHash simple = new SimpleHash();
-		MD2Hash md2 = new MD2Hash();
+		Random random = new Random(System.currentTimeMillis());
+		
+		//3 hashes will be generated
+		Murmur32 murmur32 = new Murmur32(random.nextInt());
+		SipHash24 sip24 = new SipHash24(random.nextLong(), random.nextLong());
 
-		//6 double hashes will be generated
-		hv.add(new DoubleHash(31, 7, simple, md2));
-		hv.add(new DoubleHash(11, 37, simple, md2));
-		hv.add(new DoubleHash(5, 23, simple, md2));
-		hv.add(new DoubleHash(79, 2, simple, md2));
-		hv.add(new DoubleHash(3, 83, simple, md2));
-		hv.add(new DoubleHash(5, 19, simple, md2));
+		hv.add(murmur32);
+		hv.add(sip24);
 		
 		BloomFilter testFilter = new BloomFilter(numElements, numBits, hv);
 		assertEquals(testFilter.numBits, numBits);
-		
-		System.out.format("Expected error rate: %1$.10f\n", testFilter.errorRate);
-		
+				
 		/*
-		 * All the elements inserted will be strings starting with an "A".
-		 * This will make easier to declare if a string is in the set or not.
+		 * The elements added can be of two types: the first one
+		 * are 6-character strings starting with "A", the second
+		 * one are 5-character strings starting with "B". Having
+		 * these definite types will make to know if a string 
+		 * isn't supposed to be in the set.
 		 */
 		
-		Random random = new Random(System.currentTimeMillis());
-		
-		for (int i = 0; i < numElements; i++) {
+		for (int i = 0; i < numElements/2; i++) {
 			String insert = generateString(6, "A", random);
-			System.out.println(insert);
+			testFilter.add(insert);
+		}
+		
+		for (int i = numElements/2; i < numElements; i++) {
+			String insert = generateString(5, "B", random);
 			testFilter.add(insert);
 		}
 		
 		/*
-		 * Now I'll generate strings starting with a "B", so they shouldn't
+		 * Now I'll generate strings starting with a "B" and
+		 * with length of 4 and 6, so they shouldn't
 		 * be in the hash. We can have false positives, but their number should
 		 * conform with the false positive rate.
 		 */
-		int numFalseElements = 100;
+		int numFalseElements = 100000;
 		int falsePositives = 0;
 		
-		for (int i = 0; i < numFalseElements; i++) {
+		for (int i = 0; i < numFalseElements/2; i++) {
 			String test = generateString(6, "B", random);
-			System.out.println(test);
 			if (testFilter.exists(test)) {
 				falsePositives++;
 			}
 		}
 		
-		System.out.println("false positives: " + falsePositives);
-		double falsePositiveRate = ((float)falsePositives)/((float)numFalseElements);
-		System.out.format("Found error rate: %1$.5f", falsePositiveRate);
+		for (int i = numFalseElements/2; i < numFalseElements; i++) {
+			String test = generateString(4, "B", random);
+			if (testFilter.exists(test)) {
+				falsePositives++;
+			}
+		}
 		
-		assertTrue(falsePositiveRate < testFilter.errorRate);
+		double falsePositiveRate = ((float)falsePositives)/((float)numFalseElements);
+		
+		assertTrue(Math.abs(falsePositiveRate - testFilter.errorRate) < 10E2);
 	}
 	
 	/*

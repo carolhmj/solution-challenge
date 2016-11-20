@@ -3,7 +3,7 @@ package bloomfilter;
 import java.util.BitSet;
 import java.util.Vector;
 
-import hash.HashFunction;
+import hash.BloomHashFunction;
 
 /*
  * Implementation of a Bloom Filter, which is a space-efficiente data structure for
@@ -18,16 +18,22 @@ public class BloomFilter {
 	int numBits;
 	double errorRate;
 	
-	Vector<HashFunction> hashVector;
+	Vector<BloomHashFunction> hashVector;
 	BitSet bits;
 	
 	/*
 	 * Receives the number of expected elements, the number of bits and
 	 * calculates the error rate.
 	 */ 
-	public BloomFilter(int expectedElements, int numBits, Vector<HashFunction> hashVector) {
+	public BloomFilter(int expectedElements, int numBits, Vector<BloomHashFunction> hashVector) {
 		this.expectedElements = expectedElements;
-		this.numHashes = hashVector.size();
+		
+		int count = 0;
+		for (BloomHashFunction bhf : hashVector) {
+			count += bhf.returnedHashSize();
+		}
+		this.numHashes = count;
+		
 		this.numBits = numBits;
 		this.errorRate = Math.pow((1 - Math.exp(-(double)numHashes * 
 												(double) expectedElements / 
@@ -37,23 +43,13 @@ public class BloomFilter {
 		this.hashVector = hashVector;
 	}
 	
-	/*
-	 * Since the hash functions return a 32-bit unsigned integer,
-	 * and we need signed values, we first convert the value into a
-	 * 64-bit unsigned long. But since we only have numBits bits, 
-	 * we perform a mod operation to find the bucket.
-	 */
-	
 	public void add(String value) {
-		int hashResult, index;
-		long uindex;
 		
-		for (HashFunction hash : hashVector) {
-			hashResult = hash.hash(value);
-			uindex = Integer.toUnsignedLong(hashResult);
-			index = (int)(uindex % (long)numBits);
-			
-			bits.set(index);
+		for (BloomHashFunction hash : hashVector) {
+			int[] hashValues = hash.hash(value);
+			for (int i = 0; i < hashValues.length; i++) {
+				bits.set(hashValues[i]);
+			}	
 		}
 	}
 	
@@ -65,17 +61,14 @@ public class BloomFilter {
 	 */
 	
 	public boolean exists(String value) {
-		int hashResult, index;
-		long uindex;
-		
-		for (HashFunction hash : hashVector) {
-			hashResult = hash.hash(value);
-			uindex = Integer.toUnsignedLong(hashResult);
-			index = (int)(uindex % (long)numBits);
-			
-			if (!bits.get(index)) {
-				return false;
-			}
+	
+		for (BloomHashFunction hash : hashVector) {
+			int[] hashValues = hash.hash(value);
+			for (int i = 0; i < hashValues.length; i++) {
+				if (!bits.get(hashValues[i])) {
+					return false;
+				}
+			}	
 		}
 		return true;
 	}
