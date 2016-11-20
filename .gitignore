@@ -1,29 +1,54 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Created by https://www.gitignore.io/api/eclipse
 
-# Precompiled Headers
-*.gch
-*.pch
+### Eclipse ###
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
 
-# Fortran module files
-*.mod
-*.smod
+# Eclipse Core
+.project
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# External tool builders
+.externalToolBuilders/
 
-# Executables
-*.exe
-*.out
-*.app
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# PyDev specific (Python IDE for Eclipse)
+*.pydevproject
+
+# CDT-specific (C/C++ Development Tooling)
+.cproject
+
+# JDT-specific (Eclipse Java Development Tools)
+.classpath
+
+# Java annotation processor (APT)
+.factorypath
+
+# PDT-specific (PHP Development Tools)
+.buildpath
+
+# sbteclipse plugin
+.target
+
+# Tern plugin
+.tern-project
+
+# TeXlipse plugin
+.texlipse
+
+# STS (Spring Tool Suite)
+.springBeans
+
+# Code Recommenders
+.recommenders/
